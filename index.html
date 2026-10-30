@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TCloud - Tigers Car Smart Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --card-bg: rgba(18, 26, 43, 0.85);
+      --accent-blue: #00f0ff;
+      --accent-green: #00ff88;
+      --accent-red: #ff3366;
+      --accent-yellow: #ffcc00;
+      --text-main: #ffffff;
+      --text-sub: #8a99ad;
+    }
+
+    body {
+      background: var(--bg-dark);
+      background-image: radial-gradient(circle at 50% 0%, #1a263a 0%, #0a0e17 70%);
+      color: var(--text-main);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding-bottom: 30px;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      background: rgba(10, 14, 23, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .brand-title span {
+      color: var(--accent-blue);
+    }
+
+    /* Bluetooth Status Indicator (Blinking when disconnected) */
+    .bt-btn-icon {
+      position: relative;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .bt-btn-icon:hover {
+      background: var(--accent-blue);
+      color: #000;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+    }
+
+    .bt-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--accent-red);
+    }
+
+    .bt-status-dot.blinking {
+      animation: blinkDot 1s infinite alternate;
+    }
+
+    .bt-status-dot.connected {
+      background-color: var(--accent-green);
+      animation: none;
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    @keyframes blinkDot {
+      0% { opacity: 0.2; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Blur Mask when Disconnected or Locked */
+    .app-lock-overlay {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      height: calc(100vh - 60px);
+      background: rgba(10, 14, 23, 0.6);
+      backdrop-filter: blur(12px);
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      transition: all 0.5s ease;
+    }
+
+    .app-lock-overlay.unlocked {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Custom Glass Card */
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      margin-bottom: 20px;
+    }
+
+    .card-heading {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Sensor Grid Display */
+    .sensor-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+
+    .sensor-box:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .sensor-icon {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      color: var(--accent-blue);
+    }
+
+    .sensor-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .sensor-label {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    /* Blynk Style Push Control Buttons */
+    .blynk-btn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 15px;
+    }
+
+    .blynk-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 18px 10px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .blynk-btn i {
+      font-size: 2rem;
+    }
+
+    .blynk-btn.red-active { background: rgba(255, 51, 102, 0.2); border-color: var(--accent-red); color: var(--accent-red); box-shadow: 0 0 15px rgba(255, 51, 102, 0.4); }
+    .blynk-btn.blue-active { background: rgba(0, 240, 255, 0.2); border-color: var(--accent-blue); color: var(--accent-blue); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+    .blynk-btn.white-active { background: rgba(255, 255, 255, 0.2); border-color: #fff; color: #fff; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+    .blynk-btn.yellow-active { background: rgba(255, 204, 0, 0.2); border-color: var(--accent-yellow); color: var(--accent-yellow); box-shadow: 0 0 15px rgba(255, 204, 0, 0.4); }
+
+    /* Touch Scanner Fingerprint */
+    .fingerprint-scanner {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 2px dashed var(--accent-blue);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 3rem;
+      color: var(--accent-blue);
+      cursor: pointer;
+      margin: 15px auto;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .fingerprint-scanner:active {
+      transform: scale(0.95);
+      border-style: solid;
+      box-shadow: 0 0 25px var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <div class="top-bar d-flex justify-content-between align-items-center">
+    <div class="brand-title">
+      <i class="bi bi-car-front-fill me-2 text-info"></i>TCloud <span>Tigers Car</span>
+    </div>
+    <button class="bt-btn-icon" id="btScanBtn" onclick="connectBluetooth()">
+      <div class="bt-status-dot blinking" id="btDot"></div>
+      <i class="bi bi-bluetooth"></i>
+      <span id="btStatusText">Connect BT</span>
+    </button>
+  </div>
+
+  <!-- Lock Overlay Mask -->
+  <div class="app-lock-overlay" id="lockOverlay">
+    <div class="glass-card text-center p-4" style="max-width: 380px;">
+      <i class="bi bi-shield-lock-fill text-info" style="font-size: 3.5rem;"></i>
+      <h4 class="mt-3">TCloud Lock Protection</h4>
+      <p class="text-secondary small">Device is locked. Connect Bluetooth and hold Touch Sensor / Fingerprint for 3 seconds to unlock controls.</p>
+      
+      <div class="fingerprint-scanner mt-3" id="lockFingerprint">
+        <i class="bi bi-fingerprint"></i>
+      </div>
+      <p class="text-info small mt-2">Hold Fingerprint Icon (3 Sec)</p>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container mt-4">
+    <div class="row">
+
+      <!-- Left Column: Sensor Readings -->
+      <div class="col-lg-7">
+        <div class="glass-card">
+          <div class="card-heading">
+            <i class="bi bi-cpu-fill text-info"></i> Real-time Sensor Telemetry
+          </div>
+          <div class="row g-3">
+            <div class="col-6 col-md-4">
+              <div class="sensor-box">
+                <i class="bi bi-thermometer-half sensor-icon text-danger"></i>
+                <div class="sensor-value" id="tempVal">-- °C</div>
+                <div class="sensor-label">Temperature</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="sensor-box">
+                <i class="bi bi-droplet-half sensor-icon text-info"></i>
+                <div class="sensor-value" id="humidityVal">-- %</div>
+                <div class="sensor-label">Humidity</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="sensor-box">
+                <i class="bi bi-speedometer2 sensor-icon text-warning"></i>
+                <div class="sensor-value" id="dist1Val">-- cm</div>
+                <div class="sensor-label">Ultrasonic 1</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="sensor-box">
+                <i class="bi bi-speedometer sensor-icon text-warning"></i>
+                <div class="sensor-value" id="dist2Val">-- cm</div>
+                <div class="sensor-label">Ultrasonic 2</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="sensor-box">
+                <i class="bi bi-cloud-haze2-fill sensor-icon text-success"></i>
+                <div class="sensor-value" id="gasVal">-- PPM</div>
+                <div class="sensor-label">MQ-135 Air Quality</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="sensor-box">
+                <i class="bi bi-cloud-rain-heavy-fill sensor-icon text-primary"></i>
+                <div class="sensor-value" id="rainVal">Safe</div>
+                <div class="sensor-label">Rain Detector</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Control Dashboard -->
+      <div class="col-lg-5">
+        <div class="glass-card">
+          <div class="card-heading">
+            <i class="bi bi-sliders text-info"></i> Blynk Output Controls
+          </div>
+          
+          <div class="blynk-btn-grid">
+            <div class="blynk-btn" id="btnRed" onclick="sendCmd('1')">
+              <i class="bi bi-lightbulb-fill"></i>
+              <span>1. Red LED</span>
+            </div>
+            <div class="blynk-btn" id="btnBlue" onclick="sendCmd('2')">
+              <i class="bi bi-lightbulb-fill"></i>
+              <span>2. Blue LED</span>
+            </div>
+            <div class="blynk-btn" id="btnWhite" onclick="sendCmd('3')">
+              <i class="bi bi-lightbulb-fill"></i>
+              <span>3. White LED</span>
+            </div>
+            <div class="blynk-btn" id="btnYellow" onclick="sendCmd('4')">
+              <i class="bi bi-lightbulb-fill"></i>
+              <span>4. Yellow LED</span>
+            </div>
+            <div class="blynk-btn" onclick="sendCmd('5')">
+              <i class="bi bi-shield-shaded text-danger"></i>
+              <span>5. Police Siren</span>
+            </div>
+            <div class="blynk-btn" onclick="sendCmd('6')">
+              <i class="bi bi-hospital-fill text-warning"></i>
+              <span>6. Ambulance</span>
+            </div>
+            <div class="blynk-btn" onclick="sendCmd('8')">
+              <i class="bi bi-lightning-fill text-info"></i>
+              <span>8. Blink Slow</span>
+            </div>
+            <div class="blynk-btn" onclick="sendCmd('9')">
+              <i class="bi bi-lightning-charge-fill text-danger"></i>
+              <span>9. Blink Fast</span>
+            </div>
+            <div class="blynk-btn" onclick="sendCmd('10')">
+              <i class="bi bi-activity text-success"></i>
+              <span>10. Smooth Blink</span>
+            </div>
+            <div class="blynk-btn" style="grid-column: span 2;" onclick="sendCmd('7')">
+              <i class="bi bi-power text-danger"></i>
+              <span>7. TURN OFF ALL</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let bluetoothDevice;
+    let gattCharacteristic;
+    let holdTimer;
+
+    // Web Bluetooth Scanning Function
+    async function connectBluetooth() {
+      try {
+        document.getElementById('btStatusText').innerText = "Scanning...";
+        
+        // Open browser dialog displaying ALL available Bluetooth LE devices
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
+        });
+
+        const server = await bluetoothDevice.gatt.connect();
+        const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+        gattCharacteristic = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+
+        // Update UI status to Connected
+        document.getElementById('btDot').classList.remove('blinking');
+        document.getElementById('btDot').classList.add('connected');
+        document.getElementById('btStatusText').innerText = bluetoothDevice.name || "Connected";
+
+        // Listen for sensor data notifications
+        await gattCharacteristic.startNotifications();
+        gattCharacteristic.addEventListener('characteristicvaluechanged', handleSensorData);
+
+      } catch (error) {
+        console.error("Bluetooth connection failed:", error);
+        document.getElementById('btStatusText').innerText = "Retry BT";
+      }
+    }
+
+    // Process incoming sensor telemetry string from ESP32
+    function handleSensorData(event) {
+      let decoder = new TextDecoder('utf-8');
+      let data = decoder.decode(event.target.value);
+      // Data structure format: "TEMP:28,HUM:60,D1:45,D2:80,GAS:300,RAIN:0"
+      let parts = data.split(',');
+      parts.forEach(part => {
+        let [key, val] = part.split(':');
+        if (key === 'TEMP') document.getElementById('tempVal').innerText = val + " °C";
+        if (key === 'HUM') document.getElementById('humidityVal').innerText = val + " %";
+        if (key === 'D1') document.getElementById('dist1Val').innerText = val + " cm";
+        if (key === 'D2') document.getElementById('dist2Val').innerText = val + " cm";
+        if (key === 'GAS') document.getElementById('gasVal').innerText = val + " PPM";
+        if (key === 'RAIN') document.getElementById('rainVal').innerText = (val == '1') ? "Rain Detected!" : "Safe";
+      });
+    }
+
+    // Send numeric commands (1 to 10) to ESP32
+    async function sendCmd(cmd) {
+      if (gattCharacteristic) {
+        let encoder = new TextEncoder();
+        await gattCharacteristic.writeValue(encoder.encode(cmd));
+      } else {
+        alert("Please connect Bluetooth first!");
+      }
+    }
+
+    // Touch / Fingerprint 3 seconds hold action to unlock interface
+    const scanner = document.getElementById('lockFingerprint');
+    
+    scanner.addEventListener('mousedown', startHold);
+    scanner.addEventListener('touchstart', startHold);
+    scanner.addEventListener('mouseup', endHold);
+    scanner.addEventListener('touchend', endHold);
+
+    function startHold(e) {
+      e.preventDefault();
+      holdTimer = setTimeout(() => {
+        document.getElementById('lockOverlay').classList.add('unlocked');
+      }, 3000);
+    }
+
+    function endHold() {
+      clearTimeout(holdTimer);
+    }
+  </script>
+</body>
+</html>
